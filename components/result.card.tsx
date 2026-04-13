@@ -6,7 +6,7 @@ import { Calendar, Clock, MapPin, ChevronRight, Bus } from 'lucide-react';
 export default function BusResultCard({ bus }: { bus: any }) {
   const availableSeats = bus.seats?.filter((s: any) => !s.isBooked).length || 0;
   
-  // Format the date and day name
+
   const tripDate = bus.date ? new Date(bus.date).toISOString().split('T')[0].replace(/-/g, '/') : "N/A";
   const dayName = bus.date 
     ? new Intl.DateTimeFormat('en-US', { weekday: 'long' }).format(new Date(bus.date)) 
@@ -14,13 +14,12 @@ export default function BusResultCard({ bus }: { bus: any }) {
 
   return (
     <div className="group w-full bg-[#111827] p-6 md:p-8 rounded-[2.5rem] border border-white/5 shadow-2xl hover:border-emerald-500/30 transition-all duration-500 relative overflow-hidden">
-      
-      {/* Subtle Background Glow on Hover */}
+     
       <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/5 blur-[50px] group-hover:bg-emerald-500/10 transition-colors" />
 
       <div className="flex flex-col lg:flex-row justify-between items-center gap-8 relative z-10">
         
-        {/* SECTION 1: VEHICLE & DATE INFO */}
+       
         <div className="flex flex-col gap-4 w-full lg:w-1/4">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-emerald-500/10 rounded-lg">
@@ -43,7 +42,6 @@ export default function BusResultCard({ bus }: { bus: any }) {
           </div>
         </div>
 
-        {/* SECTION 2: ROUTE VISUALIZER */}
         <div className="flex-1 w-full">
           <div className="flex items-center justify-between gap-4">
             {/* Departure */}
@@ -54,7 +52,6 @@ export default function BusResultCard({ bus }: { bus: any }) {
               <p className="text-2xl font-black text-white">{bus.departureTime}</p>
             </div>
 
-            {/* Path */}
             <div className="flex-1 flex flex-col items-center px-4">
               <div className="w-full h-[2px] bg-slate-800 relative">
                 <div className="absolute -top-1 left-0 w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_8px_#10b981]" />
@@ -75,7 +72,7 @@ export default function BusResultCard({ bus }: { bus: any }) {
           </div>
         </div>
 
-        {/* SECTION 3: PRICING & ACTION */}
+     
         <div className="w-full lg:w-1/4 flex lg:flex-col items-center lg:items-end justify-between lg:justify-center border-t lg:border-t-0 lg:border-l border-white/5 pt-6 lg:pt-0 lg:pl-8 gap-4">
           <div className="text-left lg:text-right">
             <p className="text-3xl font-black text-white leading-none">Rs. {bus.price}</p>
