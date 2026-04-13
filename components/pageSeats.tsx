@@ -31,21 +31,21 @@ const PageSeat: React.FC<PageSeatProps> = ({ initialData }) => {
   const { loggedInUser } = useAuth();
   const router = useRouter();
   
-  // --- STATES ---
+
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
-  
-  // Promo States
+
+
   const [promoCode, setPromoCode] = useState("");
   const [isApplyingPromo, setIsApplyingPromo] = useState(false);
   const [appliedPromo, setAppliedPromo] = useState<{ code: string; discount: number } | null>(null);
 
-  // --- CALCULATION LOGIC ---
+
   const subTotal = selectedSeats.length * initialData.price;
   const discountAmount = appliedPromo ? (subTotal * appliedPromo.discount) / 100 : 0;
   const finalTotal = subTotal - discountAmount;
 
-  // --- HANDLERS ---
+
   const handleApplyPromo = async () => {
     if (!promoCode.trim()) return;
     
@@ -101,8 +101,6 @@ const PageSeat: React.FC<PageSeatProps> = ({ initialData }) => {
         paymentMethod: "khalti",
       };
 
-      // 2. DYNAMICALLY add promoCode ONLY if applied.
-      // This prevents sending "null", which was causing your validation error.
       if (appliedPromo && appliedPromo.code) {
         payload.promoCode = appliedPromo.code;
       }
@@ -119,7 +117,7 @@ const PageSeat: React.FC<PageSeatProps> = ({ initialData }) => {
       }
     } catch (error: any) {
       console.error("Booking Error:", error.response?.data);
-      // Detailed error reporting for debugging
+
       const errorMessage = error.response?.data?.error?.promoCode 
         ? "Promo code error: " + error.response.data.error.promoCode
         : error.response?.data?.message || "Booking failed. Please try again.";

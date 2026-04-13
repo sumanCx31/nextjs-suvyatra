@@ -54,13 +54,13 @@ const offers = [
 
 const ProfessionalSearch = () => {
   const router = useRouter();
-  const setResults = useSearchStore((state) => state.results); // Assuming you have a results array in store
+  const setResults = useSearchStore((state) => state.results); 
   const setStoreResults = useSearchStore((state) => state.setResults);
 
   const [formData, setFormData] = useState({
     from: "",
     to: "",
-    date: "", // <input type="date"> gives "YYYY-MM-DD"
+    date: "", 
   });
 
   const [loading, setLoading] = useState(false);
@@ -81,11 +81,7 @@ const ProfessionalSearch = () => {
 
     setLoading(true);
     try {
-      /**
-       * CRITICAL CORRECTION: 
-       * We are sending the raw string from the input (e.g., "2026-03-17")
-       * to match the successful Postman request exactly.
-       */
+
       const payload = {
         from: formData.from.trim(),
         to: formData.to.trim(),
@@ -118,9 +114,6 @@ const ProfessionalSearch = () => {
       );
       
     } catch (error: any) {
-      // console.error("Search failed:", error);
-      // Backend returns { status: 404, message: "Not found trip..." }
-      // const errorMsg = error.response?.data?.message || "No trips available for this selection.";
       toast.error("Sorry, No trips available for this selection.");
     } finally {
       setLoading(false);
