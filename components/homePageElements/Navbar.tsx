@@ -16,7 +16,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import Button from "@/components/formInput/button";
-import logo from "/logo.png";
+// import logo from "/logo.png";
 import { useAuth } from "@/context/auth.context";
 
 const navLinks = [
@@ -79,7 +79,7 @@ export default function Navbar() {
           <Link href="/" className="flex items-center gap-2.5 group">
             <div className="relative w-10 h-10 rounded-xl bg-emerald-600 flex items-center justify-center overflow-hidden shadow-emerald-200 shadow-2xs group-hover:scale-105 transition-transform">
               <Image
-                src={logo}
+                src={'/logo.png'}
                 alt="Logo"
                 fill
                 className="object-cover p-1.5"

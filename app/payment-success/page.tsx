@@ -8,7 +8,6 @@ import TicketGenerator from "@/components/ticketGenerator";
 import Button from "@/components/formInput/button";
 
 
-// Define ticket type
 interface Ticket {
   from: string;
   to: string;
@@ -38,16 +37,14 @@ export default function PaymentSuccessPage() {
 
     const processPayment = async () => {
       try {
-        // 1️⃣ VERIFY PAYMENT
         const verifyRes: any = await axiosInstance.post("/order/payment/verify", { pidx });
-        // Axios usually wraps backend response in .data
+       
         const status = verifyRes?.status;
 
         if (status === "SUCCESS" || status === "completed") {
           setPaymentStatus("Completed");
           toast.success(verifyRes?.message || "Payment verified successfully!");
 
-          // 2️⃣ FETCH TICKET DATA USING pidx
           const ticketRes: any = await axiosInstance.get(`/order/my-tickets/${pidx}`);
           const fetchedTickets = ticketRes || [];
           setTickets(fetchedTickets);
@@ -56,7 +53,6 @@ export default function PaymentSuccessPage() {
           setPaymentStatus("Already_Verified");
           toast.success(verifyRes?.message || "Payment already verified");
 
-          // Optional: fetch tickets even if already verified
           const ticketRes: any = await axiosInstance.get(`/order/my-tickets/${pidx}`);
           const fetchedTickets = ticketRes.data || [];
           setTickets(fetchedTickets);
@@ -88,7 +84,7 @@ export default function PaymentSuccessPage() {
             {paymentStatus === "Completed" ? "Payment Successful!" : "Payment Already Verified"}
           </h1>
 
-          <p className="mt-4 text-lg">Your ticket{tickets.length > 1 ? "s" : ""} {tickets.length > 0 ? "are ready 🎟️" : "will appear below"}.</p>
+          <p className="mt-4 text-lg">Your ticket{tickets.length > 1 ? "s" : ""} {tickets.length > 0 ? "are ready " : "will appear below"}.</p>
 
           {tickets.length > 0 ? (
             <TicketGenerator tickets={tickets} />
