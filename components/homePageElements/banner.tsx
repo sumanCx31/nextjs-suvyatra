@@ -63,7 +63,6 @@ export default function Carousel() {
               index === current ? "opacity-100 scale-100" : "opacity-0 scale-105"
             }`}
           >
-            {/* 1. Next.js Image Component (Base Layer) */}
             <Image
               src={banner.image.secureUrl.replace('/upload/', '/upload/f_auto,q_auto,w_1920/') }
               alt={banner.title}
@@ -73,12 +72,10 @@ export default function Carousel() {
               sizes="100vw"
             />
             
-            {/* 2. THE BLUR & TINT OVERLAY (New Layer) */}
-            {/* Note: backdrop-blur-[4px] blurs the image under it, bg-black/40 adds the dark tint */}
+            
             <div className="absolute inset-0 z-10 backdrop-blur-[4px] bg-black/40"></div>
 
-            {/* 3. Content Overlay (Text & Button Layer) */}
-            {/* We must set a higher z-index (z-20) so the content is NOT blurred */}
+          
             <div className="absolute inset-0 z-20 flex flex-col justify-end p-8 md:p-16">
               <h2 className="text-3xl md:text-5xl font-black text-white italic tracking-tighter animate-in fade-in slide-in-from-bottom-4">
                 {banner.title}

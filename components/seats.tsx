@@ -83,7 +83,7 @@ const BusLayout = () => {
             </div>
           ))}
 
-          {/* Last Row (Full 5 seats or special config to reach 38) */}
+         
           <div className="flex justify-center gap-2 pt-4">
             {renderSeat('E1')}
             {renderSeat('E2')}
