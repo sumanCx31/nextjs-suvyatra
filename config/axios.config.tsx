@@ -3,7 +3,7 @@ import axios from "axios";
 const baseURL =
   process.env.NEXT_PUBLIC_API_BASE_URL
     ? `${process.env.NEXT_PUBLIC_API_BASE_URL.replace(/\/$/, "")}/api/v1`
-    : "http://localhost:9005/api/v1";
+    : "https://suvyatra-api-1.onrender.com/api/v1";
 
 export const axiosInstance = axios.create({
   baseURL,
