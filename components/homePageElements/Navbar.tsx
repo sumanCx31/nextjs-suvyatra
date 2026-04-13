@@ -27,20 +27,20 @@ const navLinks = [
 ];
 
 export default function Navbar() {
-  const [isOpen, setIsOpen] = useState(false); // Mobile menu
-  const [isProfileOpen, setIsProfileOpen] = useState(false); // Profile dropdown state
+  const [isOpen, setIsOpen] = useState(false); 
+  const [isProfileOpen, setIsProfileOpen] = useState(false); 
   const [scrolled, setScrolled] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   const pathname = usePathname();
   const { loggedInUser } = useAuth();
-  const dropdownRef = useRef<HTMLDivElement>(null); // Ref for outside click
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMounted(true);
     const handleScroll = () => setScrolled(window.scrollY > 20);
 
-    // Close dropdown when clicking outside
+  
     const handleClickOutside = (event: MouseEvent) => {
       if (
         dropdownRef.current &&
