@@ -16,7 +16,7 @@ import {
   ChevronDown,
 } from "lucide-react";
 import Button from "@/components/formInput/button";
-import logo from "../../public/logo.png";
+import logo from "/logo.png";
 import { useAuth } from "@/context/auth.context";
 
 const navLinks = [
