@@ -1,35 +1,37 @@
 "use client";
 
-import React, { useEffect, useState, use } from "react";
+import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Wallet, CheckCircle2, ArrowLeft, ShieldCheck, Bus, Ticket } from "lucide-react";
+import { Loader2, CheckCircle2, ArrowLeft, ShieldCheck, Bus, Ticket } from "lucide-react";
 import { toast } from "sonner";
-import axios from "axios";
 import authService from "@/services/auth.service";
+import { log } from "console";
 
 export default function CheckoutPage({ params, searchParams }: any) {
-  // 1. Correctly unwrap Promises for Next.js 15
+
   const resolvedParams: any = use(params);
   const resolvedSearchParams: any = use(searchParams);
   
   const orderId = resolvedParams.orderId;
-  const method = resolvedSearchParams.method || "khalti"; // Fix: Access property directly
+  const method = resolvedSearchParams.method || "khalti"; 
   
   const router = useRouter();
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isPaying, setIsPaying] = useState(false);
 
-  // 2. Fetch Order Details from Backend
   useEffect(() => {
     const fetchOrder = async () => {
       try {
+        console.log("orderId",orderId);
+        
         const response = await authService.getRequest(`order/${orderId}`);
-        if (response.data?.data) {
-          setOrder(response.data.data);
+        console.log("Order Fetch Response:", response);
+        if (response?.data) {
+          setOrder(response.data.order);
         }
       } catch (error) {
-        console.error("Order Fetch Error:", error);
+        // console.error("Order Fetch Error:", error);
         toast.error("Could not load order details.");
       } finally {
         setLoading(false);
@@ -38,30 +40,33 @@ export default function CheckoutPage({ params, searchParams }: any) {
     if (orderId) fetchOrder();
   }, [orderId]);
 
-  // 3. Handle Khalti Payment Initiation
+
   const handlePayment = async () => {
     setIsPaying(true);
     try {
-      // POST http://localhost:9005/api/v1/order/payment/:orderId
-      const response = await axios.post(
-        `http://localhost:9005/api/v1/order/payment/${orderId}`,
+      //http://localhost:9005/api/v1/order/payment/:orderId
+      const response = await authService.postRequest(
+        `order/payment/${orderId}`,
         {
-          user: order?.user?._id || "69b3e04b39e17d8e68cdd3cb", // Use real ID from fetched order
+          user: order?.user?._id || null, 
         }
       );
 
-      const paymentData = response.data;
+      const paymentData:any = response;
+      // console.log("Payment Initiation Response:", response);
 
       if (paymentData.status === "PAYMENT_INITIATE" && paymentData.data?.payment_url) {
         toast.success("Redirecting to Khalti Secure Gateway...");
-        // Use replace to prevent back-button loops
+      
         window.location.replace(paymentData.data.payment_url);
       } else {
         throw new Error("Invalid response from payment server");
       }
     } catch (error: any) {
+      
+      
       console.error("Payment Error:", error);
-      const msg = error.response?.data?.message || "Payment initiation failed.";
+      const msg = error || "Payment initiation failed.";
       toast.error(msg);
     } finally {
       setIsPaying(false);

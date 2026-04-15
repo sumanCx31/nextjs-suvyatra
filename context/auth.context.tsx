@@ -62,7 +62,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         
         setLoggedInUserProfile(res.data);
       } catch (error) {
-        console.error("Failed to fetch user:", error);
+        // console.error("Failed to fetch user:", error);
         localStorage.removeItem("accessToken");
       } finally {
         setLoading(false);
