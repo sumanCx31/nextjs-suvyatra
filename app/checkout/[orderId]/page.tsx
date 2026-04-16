@@ -2,19 +2,25 @@
 
 import { useEffect, useState, use } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, CheckCircle2, ArrowLeft, ShieldCheck, Bus, Ticket } from "lucide-react";
+import {
+  Loader2,
+  CheckCircle2,
+  ArrowLeft,
+  ShieldCheck,
+  Bus,
+  Ticket,
+} from "lucide-react";
 import { toast } from "sonner";
 import authService from "@/services/auth.service";
 import { log } from "console";
 
 export default function CheckoutPage({ params, searchParams }: any) {
-
   const resolvedParams: any = use(params);
   const resolvedSearchParams: any = use(searchParams);
-  
+
   const orderId = resolvedParams.orderId;
-  const method = resolvedSearchParams.method || "khalti"; 
-  
+  const method = resolvedSearchParams.method || "khalti";
+
   const router = useRouter();
   const [order, setOrder] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -23,8 +29,8 @@ export default function CheckoutPage({ params, searchParams }: any) {
   useEffect(() => {
     const fetchOrder = async () => {
       try {
-        console.log("orderId",orderId);
-        
+        console.log("orderId", orderId);
+
         const response = await authService.getRequest(`order/${orderId}`);
         console.log("Order Fetch Response:", response);
         if (response?.data) {
@@ -40,7 +46,6 @@ export default function CheckoutPage({ params, searchParams }: any) {
     if (orderId) fetchOrder();
   }, [orderId]);
 
-
   const handlePayment = async () => {
     setIsPaying(true);
     try {
@@ -48,24 +53,26 @@ export default function CheckoutPage({ params, searchParams }: any) {
       const response = await authService.postRequest(
         `order/payment/${orderId}`,
         {
-          user: order?.user?._id || null, 
-        }
+          user: order?.user?._id || null,
+        },
       );
 
-      const paymentData:any = response;
-      // console.log("Payment Initiation Response:", response);
+      const paymentData: any = response;
+      console.log("Payment Initiation Response:");
+      console.log("paymentUrl:", paymentData.data.payment_url);
 
-      if (paymentData.status === "PAYMENT_INITIATE" && paymentData.data?.payment_url) {
+      if (
+        paymentData.status === "PAYMENT_INITIATE" &&
+        paymentData.data?.payment_url
+      ) {
         toast.success("Redirecting to Khalti Secure Gateway...");
-      
+
         window.location.replace(paymentData.data.payment_url);
       } else {
         throw new Error("Invalid response from payment server");
       }
     } catch (error: any) {
-      
-      
-      console.error("Payment Error:", error);
+      // console.error("Payment Error:", error);
       const msg = error || "Payment initiation failed.";
       toast.error(msg);
     } finally {
@@ -88,7 +95,6 @@ export default function CheckoutPage({ params, searchParams }: any) {
     <div className="min-h-screen bg-[#F8FAFC] pt-28 pb-20 px-6">
       <div className="max-w-xl mx-auto">
         <div className="bg-white rounded-[2.5rem] shadow-2xl border border-slate-100 overflow-hidden">
-          
           {/* Header Section */}
           <div className="bg-slate-900 p-10 text-white relative">
             <div className="absolute top-0 right-0 p-8 opacity-10">
@@ -110,21 +116,31 @@ export default function CheckoutPage({ params, searchParams }: any) {
                   <Bus className="text-slate-600" size={18} />
                 </div>
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase leading-none">Trip Route</p>
-                  <p className="font-bold text-slate-900">{order?.trip?.from} ➔ {order?.trip?.to}</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase leading-none">
+                    Trip Route
+                  </p>
+                  <p className="font-bold text-slate-900">
+                    {order?.trip?.from} ➔ {order?.trip?.to}
+                  </p>
                 </div>
               </div>
 
               <div className="flex justify-between items-center">
                 <div>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase">Selected Seats</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase">
+                    Selected Seats
+                  </p>
                   <p className="font-black text-emerald-600 text-lg">
                     {order?.seats?.join(", ") || "N/A"}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-[10px] font-bold text-slate-400 uppercase">Departure</p>
-                  <p className="font-bold text-slate-900">{order?.trip?.departureTime || "07:10 AM"}</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase">
+                    Departure
+                  </p>
+                  <p className="font-bold text-slate-900">
+                    {order?.trip?.departureTime || "07:10 AM"}
+                  </p>
                 </div>
               </div>
             </div>
@@ -132,7 +148,9 @@ export default function CheckoutPage({ params, searchParams }: any) {
             {/* Price Summary */}
             <div className="flex justify-between items-center px-2">
               <div>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Total Payable</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">
+                  Total Payable
+                </p>
                 <h2 className="text-4xl font-black text-slate-900">
                   Rs. {order?.totalAmount?.toLocaleString()}
                 </h2>
@@ -146,7 +164,7 @@ export default function CheckoutPage({ params, searchParams }: any) {
 
             {/* Payment Button */}
             <div className="space-y-4 pt-2">
-              <button 
+              <button
                 onClick={handlePayment}
                 disabled={isPaying}
                 className="w-full h-20 bg-[#5C2D91] hover:bg-[#4c247d] text-white rounded-3xl font-black text-xl shadow-xl shadow-purple-100 transition-all flex items-center justify-center gap-4 group disabled:opacity-70"
@@ -170,7 +188,7 @@ export default function CheckoutPage({ params, searchParams }: any) {
         </div>
 
         {/* Back Navigation */}
-        <button 
+        <button
           onClick={() => router.back()}
           className="mt-8 mx-auto flex items-center gap-2 text-slate-400 font-bold hover:text-slate-900 transition-colors uppercase text-[10px] tracking-[0.2em]"
         >
