@@ -96,7 +96,7 @@ const PaymentSuccessContent = () => {
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, x: -20 }}
-            className="max-w-md mx-auto bg-slate-900/60 border border-white/10 p-10 rounded-[3rem] backdrop-blur-2xl shadow-2xl text-center"
+            className="max-w-md mx-auto bg-slate-800/60 border border-white/10 p-10 rounded-[3rem] backdrop-blur-2xl shadow-2xl text-center"
           >
             {status === "Failed" ? (
               <div className="space-y-8">
