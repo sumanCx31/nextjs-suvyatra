@@ -14,7 +14,6 @@ import {
 import { toast } from "sonner";
 import { useAuth } from "@/context/auth.context";
 import authService from "@/services/auth.service";
-import { log } from "console";
 
 interface PageSeatProps {
   initialData: {
@@ -80,7 +79,7 @@ const PageSeat: React.FC<PageSeatProps> = ({ initialData }) => {
         toast.error("Invalid or expired promo code.");
       }
     } catch (error) {
-      toast.error("Could not validate promo code.");
+      toast.error("Could not validate promo code."); 
     } finally {
       setIsApplyingPromo(false);
     }
@@ -125,14 +124,18 @@ const PageSeat: React.FC<PageSeatProps> = ({ initialData }) => {
         router.push(`/checkout/${orderId}?method=khalti`);
       }
     } catch (error: any) {
+      console.log("err:",error);
+      
       // console.error("Booking Error:", error);
       if(error.data.message==="Promo already used"){
         toast.error("You have already used this promo code on a previous booking.");
         return;
       }else{
+        console.log("errorrr:",error);
+        
         const errorMessage = error.response?.data?.error?.promoCode
         ? "Promo code error: " + error.response.data.error.promoCode
-        : error.response?.data?.message || "Booking failed. Please try again.";
+        : error?.data?.message || "Booking failed. Please try again.";
 
       toast.error(errorMessage)
       }
