@@ -5,9 +5,6 @@ import { Armchair } from 'lucide-react';
 
 const BusLayout = () => {
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
-
-  // Generate 38 seats: Rows 1-8 (2x2) = 32 seats + Row 9 (2x2) = 4 seats + Back Row = 2? 
-  // Let's do 9 rows of 2x2 (36) + 2 extra at the very back = 38.
   const rows = 9;
   
   const toggleSeat = (id: string) => {
