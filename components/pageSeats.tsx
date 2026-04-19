@@ -124,9 +124,8 @@ const PageSeat: React.FC<PageSeatProps> = ({ initialData }) => {
         router.push(`/checkout/${orderId}?method=khalti`);
       }
     } catch (error: any) {
-      console.log("err:",error);
+      // console.log("err:",error);
       
-      // console.error("Booking Error:", error);
       if(error.data.message==="Promo already used"){
         toast.error("You have already used this promo code on a previous booking.");
         return;
