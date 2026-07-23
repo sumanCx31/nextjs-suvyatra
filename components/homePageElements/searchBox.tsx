@@ -19,39 +19,6 @@ import {
 } from "lucide-react";
 import { PromoSection } from "./promoSection";
 
-const offers = [
-  {
-    id: 1,
-    title: "Launch Celebration",
-    description: "Get a flat discount on your first remote SUV booking. Welcome to the future of travel.",
-    discount: "20% OFF",
-    code: "YATRA2026",
-    expiry: "Valid until April 30",
-    type: "New User",
-    color: "from-emerald-500 to-teal-600"
-  },
-  {
-    id: 2,
-    title: "Group Adventure",
-    description: "Traveling with friends? Book 4 or more seats and get a massive rebate instantly.",
-    discount: "Rs. 500 BACK",
-    code: "SQUADGOALS",
-    expiry: "Limited Time Offer",
-    type: "Group Booking",
-    color: "from-blue-600 to-indigo-700"
-  },
-  {
-    id: 3,
-    title: "Night Rider Deal",
-    description: "Special rates for all SUV departures scheduled between 8:00 PM and 4:00 AM.",
-    discount: "10% OFF",
-    code: "NIGHTOWL",
-    expiry: "Daily Offer",
-    type: "Timed Deal",
-    color: "from-purple-600 to-pink-600"
-  }
-];
-
 const ProfessionalSearch = () => {
   const router = useRouter();
   const setResults = useSearchStore((state) => state.results); 
