@@ -1,23 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
 import { MapPin, Navigation, Calendar, Search, Loader2 } from "lucide-react";
 import searchService from "@/services/search.service";
 import { useSearchStore } from "@/store/useSearchStore";
 import { toast } from "sonner";
-import { 
-  Tag, 
-  Copy, 
-  CheckCircle2, 
-  Gift, 
-  Clock, 
-  Zap, 
-  ChevronRight, 
-  TicketPercent 
-} from "lucide-react";
 import { PromoSection } from "./promoSection";
+import { cities } from "@/components/cities";
 
 const ProfessionalSearch = () => {
   const router = useRouter();
@@ -31,16 +22,73 @@ const ProfessionalSearch = () => {
   });
 
   const [loading, setLoading] = useState(false);
+  const [fromSuggestions, setFromSuggestions] = useState<string[]>([]);
+  const [toSuggestions, setToSuggestions] = useState<string[]>([]);
+  const [showFromDropdown, setShowFromDropdown] = useState(false);
+  const [showToDropdown, setShowToDropdown] = useState(false);
+
+  const fromRef = useRef<HTMLDivElement>(null);
+  const toRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (fromRef.current && !fromRef.current.contains(event.target as Node)) {
+        setShowFromDropdown(false);
+      }
+      if (toRef.current && !toRef.current.contains(event.target as Node)) {
+        setShowToDropdown(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
-      [e.target.name]: e.target.value,
+      [name]: value,
     }));
+
+    if (name === "from") {
+      if (value.trim() === "") {
+        setFromSuggestions([]);
+        setShowFromDropdown(false);
+      } else {
+        const filtered = cities.filter((city) =>
+          city.toLowerCase().includes(value.toLowerCase())
+        );
+        setFromSuggestions(filtered);
+        setShowFromDropdown(true);
+      }
+    } else if (name === "to") {
+      if (value.trim() === "") {
+        setToSuggestions([]);
+        setShowToDropdown(false);
+      } else {
+        const filtered = cities.filter((city) =>
+          city.toLowerCase().includes(value.toLowerCase())
+        );
+        setToSuggestions(filtered);
+        setShowToDropdown(true);
+      }
+    }
+  };
+
+  const handleSelectLocation = (field: "from" | "to", value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+    if (field === "from") {
+      setShowFromDropdown(false);
+    } else {
+      setShowToDropdown(false);
+    }
   };
 
   const handleSearch = async () => {
-    // 1. Validation
     if (!formData.from || !formData.to || !formData.date) {
       toast.error("Please fill all search details");
       return;
@@ -48,18 +96,13 @@ const ProfessionalSearch = () => {
 
     setLoading(true);
     try {
-
       const payload = {
         from: formData.from.trim(),
         to: formData.to.trim(),
-        date: formData.date, // Sending "YYYY-MM-DD" directly
+        date: formData.date,
       };
 
-      console.log("Requesting with Payload:", payload);
-
       const response = await searchService.postRequest("/search", payload);
-      
-      // Access the nested data array from your specific JSON response structure
       const busList = response.data?.data || response.data || [];
 
       if (busList.length === 0) {
@@ -67,11 +110,9 @@ const ProfessionalSearch = () => {
         return;
       }
 
-      // 2. Update Zustand Store & SessionStorage for persistence
       setStoreResults(busList);
       sessionStorage.setItem("bus_results", JSON.stringify(busList));
 
-      // 3. Navigate to Results Page with Query Params
       const slug = `${formData.from}-to-${formData.to}`
         .toLowerCase()
         .replace(/\s+/g, "-");
@@ -86,13 +127,6 @@ const ProfessionalSearch = () => {
       setLoading(false);
     }
   };
-const [copiedCode, setCopiedCode] = useState<string | null>(null);
-
-  const copyToClipboard = (code: string) => {
-    navigator.clipboard.writeText(code);
-    setCopiedCode(code);
-    setTimeout(() => setCopiedCode(null), 2000);
-  };
 
   return (
     <>
@@ -104,8 +138,7 @@ const [copiedCode, setCopiedCode] = useState<string | null>(null);
                    bg-slate-900/80 backdrop-blur-2xl border border-white/10 
                    rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
       >
-        {/* FROM FIELD */}
-        <div className="w-full flex-1 px-6 py-3 border-b lg:border-b-0 lg:border-r border-white/10">
+        <div ref={fromRef} className="w-full flex-1 px-6 py-3 border-b lg:border-b-0 lg:border-r border-white/10 relative">
           <label className="flex items-center gap-2 text-[10px] font-black text-blue-400 uppercase tracking-[0.2em] mb-1">
             <MapPin size={14} className="text-blue-500" /> From
           </label>
@@ -116,13 +149,30 @@ const [copiedCode, setCopiedCode] = useState<string | null>(null);
             autoComplete="off"
             value={formData.from}
             onChange={handleChange}
+            onFocus={() => {
+              if (formData.from.trim() && cities.length > 0) {
+                setShowFromDropdown(true);
+              }
+            }}
             placeholder="Origin City"
             className="w-full bg-transparent border-none outline-none text-white text-lg placeholder:text-white/20 focus:ring-0"
           />
+          {showFromDropdown && fromSuggestions.length > 0 && (
+            <ul className="absolute left-6 right-6 top-full mt-2 bg-slate-900 border border-white/10 rounded-2xl max-h-48 overflow-y-auto z-50 shadow-xl divide-y divide-white/5">
+              {fromSuggestions.map((city, idx) => (
+                <li
+                  key={idx}
+                  onClick={() => handleSelectLocation("from", city)}
+                  className="px-4 py-3 text-sm text-slate-200 hover:bg-emerald-500/10 hover:text-emerald-400 cursor-pointer transition-colors"
+                >
+                  {city}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
-        {/* TO FIELD */}
-        <div className="w-full flex-1 px-6 py-3 border-b lg:border-b-0 lg:border-r border-white/10">
+        <div ref={toRef} className="w-full flex-1 px-6 py-3 border-b lg:border-b-0 lg:border-r border-white/10 relative">
           <label className="flex items-center gap-2 text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] mb-1">
             <Navigation size={14} className="text-emerald-500" /> To
           </label>
@@ -133,12 +183,29 @@ const [copiedCode, setCopiedCode] = useState<string | null>(null);
             autoComplete="off"
             value={formData.to}
             onChange={handleChange}
+            onFocus={() => {
+              if (formData.to.trim() && cities.length > 0) {
+                setShowToDropdown(true);
+              }
+            }}
             placeholder="Destination"
             className="w-full bg-transparent border-none outline-none text-white text-lg placeholder:text-white/20 focus:ring-0"
           />
+          {showToDropdown && toSuggestions.length > 0 && (
+            <ul className="absolute left-6 right-6 top-full mt-2 bg-slate-900 border border-white/10 rounded-2xl max-h-48 overflow-y-auto z-50 shadow-xl divide-y divide-white/5">
+              {toSuggestions.map((city, idx) => (
+                <li
+                  key={idx}
+                  onClick={() => handleSelectLocation("to", city)}
+                  className="px-4 py-3 text-sm text-slate-200 hover:bg-emerald-500/10 hover:text-emerald-400 cursor-pointer transition-colors"
+                >
+                  {city}
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
-        {/* DATE FIELD */}
         <div className="w-full flex-1 px-6 py-3">
           <label className="flex items-center gap-2 text-[10px] font-black text-purple-400 uppercase tracking-[0.2em] mb-1">
             <Calendar size={14} className="text-purple-500" /> Date
@@ -153,7 +220,6 @@ const [copiedCode, setCopiedCode] = useState<string | null>(null);
           />
         </div>
 
-        {/* SEARCH BUTTON */}
         <motion.button
           suppressHydrationWarning
           whileHover={{ scale: 1.02 }}
@@ -162,7 +228,7 @@ const [copiedCode, setCopiedCode] = useState<string | null>(null);
           disabled={loading}
           type="button"
           className="w-full lg:w-auto h-16 px-14 bg-emerald-500 text-slate-900 font-black rounded-2xl 
-                     transition-all shadow-lg flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed"
+                   transition-all shadow-lg flex items-center justify-center gap-3 disabled:opacity-70 disabled:cursor-not-allowed"
         >
           <AnimatePresence mode="wait">
             {loading ? (

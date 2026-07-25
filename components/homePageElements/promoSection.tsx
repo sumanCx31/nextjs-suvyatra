@@ -69,8 +69,18 @@ export const PromoSection: React.FC = () => {
     );
   }
 
+  // Filter out expired promos and inactive ones
+  const currentDate = new Date();
+  const validPromos = promos.filter((p) => {
+    const isNotExpired = new Date(p.expiryDate) >= currentDate;
+    return p.isActive && isNotExpired;
+  });
+
+  if (validPromos.length === 0) {
+    return null; // Or a friendly fallback message if no active promos are available
+  }
+
   return (
-    /* UPDATED: Changed to max-w-7xl and reduced horizontal padding for a wider look */
     <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
       <header className="text-center mb-12 space-y-4">
         <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 text-[10px] font-black uppercase tracking-widest">
@@ -81,67 +91,64 @@ export const PromoSection: React.FC = () => {
         </h2>
       </header>
 
-      {/* UPDATED: Added xl:grid-cols-4 to fill the wider space effectively */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {promos
-          .filter((p) => p.isActive)
-          .map((promo, idx) => (
-            <motion.div
-              key={promo._id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.05 }}
-              className="bg-[#0F172A] border border-white/5 rounded-[2rem] overflow-hidden flex flex-col h-full hover:border-emerald-500/30 transition-all shadow-xl group"
-            >
-              <div className="h-28 bg-gradient-to-br from-emerald-500 to-teal-700 p-6 flex items-center justify-between">
-                <div className="bg-black/20 backdrop-blur-md p-2.5 rounded-xl text-white">
-                  <TicketPercent size={28} />
-                </div>
-                <div className="text-right text-white">
-                  <p className="text-[8px] font-black uppercase tracking-widest opacity-70">Discount</p>
-                  <h3 className="text-2xl font-black italic">{promo.discountPercentage}% OFF</h3>
-                </div>
+        {validPromos.map((promo, idx) => (
+          <motion.div
+            key={promo._id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: idx * 0.05 }}
+            className="bg-[#0F172A] border border-white/5 rounded-[2rem] overflow-hidden flex flex-col h-full hover:border-emerald-500/30 transition-all shadow-xl group"
+          >
+            <div className="h-28 bg-gradient-to-br from-emerald-500 to-teal-700 p-6 flex items-center justify-between">
+              <div className="bg-black/20 backdrop-blur-md p-2.5 rounded-xl text-white">
+                <TicketPercent size={28} />
+              </div>
+              <div className="text-right text-white">
+                <p className="text-[8px] font-black uppercase tracking-widest opacity-70">Discount</p>
+                <h3 className="text-2xl font-black italic">{promo.discountPercentage}% OFF</h3>
+              </div>
+            </div>
+
+            <div className="p-6 flex-1 flex flex-col">
+              <h4 className="text-lg font-black mb-2 uppercase text-white truncate">
+                {promo.title || "Special Offer"}
+              </h4>
+              <p className="text-slate-500 text-xs leading-relaxed mb-6 flex-1 line-clamp-3">
+                {promo.description || `Save ${promo.discountPercentage}% on your journey. Min booking: Rs. ${promo.minAmount}.`}
+              </p>
+
+              <div className="flex items-center gap-2 text-slate-500 text-[9px] font-bold uppercase mb-4">
+                <Clock size={10} className="text-emerald-500" /> 
+                Expires: {formatDate(promo.expiryDate)}
               </div>
 
-              <div className="p-6 flex-1 flex flex-col">
-                <h4 className="text-lg font-black mb-2 uppercase text-white truncate">
-                  {promo.title || "Special Offer"}
-                </h4>
-                <p className="text-slate-500 text-xs leading-relaxed mb-6 flex-1 line-clamp-3">
-                  {promo.description || `Save ${promo.discountPercentage}% on your journey. Min booking: Rs. ${promo.minAmount}.`}
-                </p>
-
-                <div className="flex items-center gap-2 text-slate-500 text-[9px] font-bold uppercase mb-4">
-                  <Clock size={10} className="text-emerald-500" /> 
-                  Expires: {formatDate(promo.expiryDate)}
+              <button 
+                onClick={() => copyToClipboard(promo.code)}
+                className="w-full py-3.5 bg-slate-900 border border-white/5 rounded-xl flex items-center justify-between px-5 hover:bg-slate-800 transition-all active:scale-95 group/btn"
+              >
+                <div className="flex flex-col items-start text-left">
+                  <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest">Tap to Copy</span>
+                  <span className="text-md font-black font-mono text-emerald-500 tracking-wider">
+                    {promo.code}
+                  </span>
                 </div>
-
-                <button 
-                  onClick={() => copyToClipboard(promo.code)}
-                  className="w-full py-3.5 bg-slate-900 border border-white/5 rounded-xl flex items-center justify-between px-5 hover:bg-slate-800 transition-all active:scale-95 group/btn"
-                >
-                  <div className="flex flex-col items-start text-left">
-                    <span className="text-[7px] font-black text-slate-500 uppercase tracking-widest">Tap to Copy</span>
-                    <span className="text-md font-black font-mono text-emerald-500 tracking-wider">
-                      {promo.code}
-                    </span>
-                  </div>
-                  
-                  <AnimatePresence mode="wait">
-                    {copiedCode === promo.code ? (
-                      <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-emerald-500">
-                        <CheckCircle2 size={16} />
-                      </motion.div>
-                    ) : (
-                      <div className="text-slate-600 group-hover/btn:text-white transition-colors">
-                        <Copy size={16} />
-                      </div>
-                    )}
-                  </AnimatePresence>
-                </button>
-              </div>
-            </motion.div>
-          ))}
+                
+                <AnimatePresence mode="wait">
+                  {copiedCode === promo.code ? (
+                    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="text-emerald-500">
+                      <CheckCircle2 size={16} />
+                    </motion.div>
+                  ) : (
+                    <div className="text-slate-600 group-hover/btn:text-white transition-colors">
+                      <Copy size={16} />
+                    </div>
+                  )}
+                </AnimatePresence>
+              </button>
+            </div>
+          </motion.div>
+        ))}
       </div>
     </section>
   );
