@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
   Armchair,
@@ -10,6 +10,9 @@ import {
   Loader2,
   Tag,
   X,
+  Award,
+  Sparkles,
+  Percent
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/context/auth.context";
@@ -34,6 +37,16 @@ interface PageSeatProps {
   };
 }
 
+interface LoyaltyData {
+  name: string;
+  email: string;
+  membership: string;
+  discount: number;
+  totalSeatsBookedLast30Days: number;
+  nextLevel: string | null;
+  seatsRequired: number;
+}
+
 const PageSeat: React.FC<PageSeatProps> = ({ initialData }) => {
   const { loggedInUser } = useAuth();
   const router = useRouter();
@@ -41,6 +54,7 @@ const PageSeat: React.FC<PageSeatProps> = ({ initialData }) => {
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
+  // Promo code states
   const [promoCode, setPromoCode] = useState("");
   const [isApplyingPromo, setIsApplyingPromo] = useState(false);
   const [appliedPromo, setAppliedPromo] = useState<{
@@ -48,19 +62,65 @@ const PageSeat: React.FC<PageSeatProps> = ({ initialData }) => {
     discount: number;
   } | null>(null);
 
+  // Loyalty states
+  const [loyalty, setLoyalty] = useState<LoyaltyData | null>(null);
+  const [loyaltyLoading, setLoyaltyLoading] = useState(true);
+  const [useLoyaltyDiscount, setUseLoyaltyDiscount] = useState(false);
+
+  // Fetch loyalty tier on load using the correct endpoint and response structure (response.data.data)
+  useEffect(() => {
+    let isMounted = true;
+    const fetchLoyalty = async () => {
+      const _id = loggedInUser?._id;
+      if (!_id) {
+        setLoyaltyLoading(false);
+        return;
+      }
+      try {
+        const response = await authService.getRequest(`/loyalty/${_id}`);
+        const data = response.data?.data || response.data;
+        if (isMounted && data) {
+          setLoyalty(data);
+          // Auto-enable loyalty discount if user has a membership with discount > 0 and no promo is applied
+          if (data.discount > 0) {
+            setUseLoyaltyDiscount(true);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to load loyalty tier:", error);
+      } finally {
+        if (isMounted) setLoyaltyLoading(false);
+      }
+    };
+
+    fetchLoyalty();
+    return () => {
+      isMounted = false;
+    };
+  }, [loggedInUser]);
+
+  // Calculations
   const subTotal = selectedSeats.length * initialData.price;
-  const discountAmount = appliedPromo
-    ? (subTotal * appliedPromo.discount) / 100
-    : 0;
+
+  // Determine active discount percentage (Promo code takes precedence over loyalty discount)
+  let activeDiscountPercentage = 0;
+  if (appliedPromo) {
+    activeDiscountPercentage = appliedPromo.discount;
+  } else if (useLoyaltyDiscount && loyalty) {
+    activeDiscountPercentage = loyalty.discount;
+  }
+
+  const discountAmount = (subTotal * activeDiscountPercentage) / 100;
   const finalTotal = subTotal - discountAmount;
 
+  // Fix promo fetch logic to correctly read from response.data.data instead of response.data
   const handleApplyPromo = async () => {
     if (!promoCode.trim()) return;
 
     setIsApplyingPromo(true);
     try {
       const response = await authService.getRequest("/offers");
-      const promos = response.data || [];
+      const promos = response.data?.data || response.data || [];
 
       const foundPromo = promos.find(
         (p: any) =>
@@ -72,14 +132,16 @@ const PageSeat: React.FC<PageSeatProps> = ({ initialData }) => {
           code: foundPromo.code,
           discount: foundPromo.discountPercentage,
         });
+        // Disable loyalty discount toggle when custom promo code is applied
+        setUseLoyaltyDiscount(false);
         toast.success(
-          `Code applied! ${foundPromo.discountPercentage}% discount added.`,
+          `Promo applied! ${foundPromo.discountPercentage}% discount added.`,
         );
       } else {
         toast.error("Invalid or expired promo code.");
       }
     } catch (error) {
-      toast.error("Could not validate promo code."); 
+      toast.error("Could not validate promo code.");
     } finally {
       setIsApplyingPromo(false);
     }
@@ -88,6 +150,18 @@ const PageSeat: React.FC<PageSeatProps> = ({ initialData }) => {
   const removePromo = () => {
     setAppliedPromo(null);
     setPromoCode("");
+    // Re-enable loyalty discount if available
+    if (loyalty && loyalty.discount > 0) {
+      setUseLoyaltyDiscount(true);
+    }
+  };
+
+  const toggleLoyaltyDiscount = () => {
+    if (appliedPromo) {
+      toast.info("Promo code is currently active. Remove promo code to use tier discount.");
+      return;
+    }
+    setUseLoyaltyDiscount(!useLoyaltyDiscount);
   };
 
   const handleProceed = async () => {
@@ -111,33 +185,41 @@ const PageSeat: React.FC<PageSeatProps> = ({ initialData }) => {
         paymentMethod: "khalti",
       };
 
+      // Send conditional parameters based on active discount type
       if (appliedPromo && appliedPromo.code) {
         payload.promoCode = appliedPromo.code;
+      } else if (useLoyaltyDiscount && loyalty && loyalty.discount > 0) {
+        payload.useLoyaltyDiscount = true;
       }
 
-      const response:any = await authService.postRequest(`order`, payload);
+      const response: any = await authService.postRequest(`order`, payload);
 
-
-      if (response.data?._id) {
-        const orderId = response.data._id;
+      if (response.data?._id || response.data?.data?._id) {
+        const orderData = response.data?.data || response.data;
+        const orderId = orderData._id;
         toast.success("Order confirmed!");
         router.push(`/checkout/${orderId}?method=khalti`);
       }
     } catch (error: any) {
-      // console.log("err:",error);
+      console.error("Booking order error details:", error);
       
-      if(error.data.message==="Promo already used"){
-        toast.error("You have already used this promo code on a previous booking.");
-        return;
-      }else{
-        console.log("errorrr:",error);
-        
-        const errorMessage = error.response?.data?.error?.promoCode
-        ? "Promo code error: " + error.response.data.error.promoCode
-        : error?.data?.message || "Booking failed. Please try again.";
+      // Fallback extraction safely checking nested properties or custom error structures from Axios/Fetch
+      const errData = error?.response?.data || error?.data || error;
+      let errorMessage = "Booking failed. Please try again.";
 
-      toast.error(errorMessage)
+      if (typeof errData === "string") {
+        errorMessage = errData;
+      } else if (errData?.message) {
+        errorMessage = errData.message;
+      } else if (errData?.error) {
+        if (typeof errData.error === "string") {
+          errorMessage = errData.error;
+        } else if (errData.error.message) {
+          errorMessage = errData.error.message;
+        }
       }
+
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -186,7 +268,7 @@ const PageSeat: React.FC<PageSeatProps> = ({ initialData }) => {
   return (
     <div className="flex flex-col lg:flex-row pt-24 pb-12 bg-[#F8FAFC] p-4 md:px-10 gap-8 justify-center items-start">
       {/* BUS VISUALIZER */}
-      <div className="w-full max-w-105 bg-white rounded-[40px] shadow-2xl border-12 border-slate-50 overflow-hidden">
+      <div className="w-full max-w-[420px] bg-white rounded-[40px] shadow-2xl border-[12px] border-slate-50 overflow-hidden">
         <div className="bg-slate-50 p-6 border-b border-dashed border-slate-200 text-slate-900">
           <button
             onClick={() => router.back()}
@@ -240,7 +322,7 @@ const PageSeat: React.FC<PageSeatProps> = ({ initialData }) => {
       </div>
 
       {/* SUMMARY SIDEBAR */}
-      <div className="w-full max-w-100 sticky top-28">
+      <div className="w-full max-w-[400px] sticky top-28">
         <div className="bg-white rounded-3xl p-8 shadow-xl border border-slate-100">
           <h2 className="text-xl font-black text-slate-900 uppercase tracking-tighter">
             SUV{" "}
@@ -253,7 +335,7 @@ const PageSeat: React.FC<PageSeatProps> = ({ initialData }) => {
               <span className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">
                 Selected Seats
               </span>
-              <div className="flex gap-1 flex-wrap mt-2 min-h-7.5">
+              <div className="flex gap-1 flex-wrap mt-2 min-h-[30px]">
                 {selectedSeats.length > 0 ? (
                   selectedSeats.map((s) => (
                     <span
@@ -270,6 +352,38 @@ const PageSeat: React.FC<PageSeatProps> = ({ initialData }) => {
                 )}
               </div>
             </div>
+
+            {/* --- LOYALTY TIER PERKS DISCOUNT BANNER --- */}
+            {!loyaltyLoading && loyalty && loyalty.discount > 0 && (
+              <div className="bg-gradient-to-r from-slate-900 to-[#0c1829] border border-emerald-500/30 rounded-2xl p-4 shadow-md text-white">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="p-2 bg-emerald-500/20 rounded-xl text-emerald-400">
+                      <Award size={16} />
+                    </div>
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-emerald-400">
+                        {loyalty.membership} Tier Perk
+                      </p>
+                      <p className="text-xs font-bold text-white">
+                        {loyalty.discount}% Automatic Discount
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={toggleLoyaltyDiscount}
+                    className={`px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all border ${
+                      useLoyaltyDiscount && !appliedPromo
+                        ? "bg-emerald-500 text-slate-950 border-emerald-400 shadow-lg"
+                        : "bg-white/5 text-slate-400 border-white/10 hover:bg-white/10"
+                    }`}
+                  >
+                    {useLoyaltyDiscount && !appliedPromo ? "Applied" : "Apply"}
+                  </button>
+                </div>
+              </div>
+            )}
 
             {/* Promo Section */}
             <div className="border-y border-dashed border-slate-100 py-6">
@@ -334,9 +448,11 @@ const PageSeat: React.FC<PageSeatProps> = ({ initialData }) => {
                 </span>
               </div>
 
-              {appliedPromo && (
+              {activeDiscountPercentage > 0 && (
                 <div className="flex justify-between text-xs font-bold text-emerald-500 uppercase">
-                  <span>Discount</span>
+                  <span className="flex items-center gap-1">
+                    <Percent size={12} /> Discount ({activeDiscountPercentage}%)
+                  </span>
                   <span>- Rs. {discountAmount.toLocaleString()}</span>
                 </div>
               )}

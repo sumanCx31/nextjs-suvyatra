@@ -30,10 +30,25 @@ export default function BusTripsPage() {
         const data = response.data?.data || response.data || [];
 
         const tripArray = Array.isArray(data) ? data : [data];
-        setTrips(tripArray);
+        
+        // Filter out trips whose dates have already passed
+        const currentDate = new Date();
+        currentDate.setHours(0, 0, 0, 0); // Normalize to start of today for fair date comparison
 
-        if (tripArray.length > 0) {
-          // Setting bus details from the first trip's busId object
+        const upcomingTrips = tripArray.filter((trip) => {
+          if (!trip.date) return false;
+          const tripDate = new Date(trip.date);
+          tripDate.setHours(0, 0, 0, 0);
+          return tripDate >= currentDate;
+        });
+
+        setTrips(upcomingTrips);
+
+        if (upcomingTrips.length > 0) {
+          // Setting bus details from the first valid trip's busId object
+          setBusDetails(upcomingTrips[0].busId);
+        } else if (tripArray.length > 0) {
+          // Fallback if all trips passed, just to show bus name/number if needed
           setBusDetails(tripArray[0].busId);
         }
       } catch (error) {
@@ -49,7 +64,6 @@ export default function BusTripsPage() {
   // Handler for navigation
   const handleBooking = (tripId: any) => {
     router.push(`/search-bus/${tripId}/select-seats`);
-    //search-bus/69c69383c51e2ba3314ecd7a/select-seats
   };
 
   return (
@@ -86,7 +100,7 @@ export default function BusTripsPage() {
           </div>
           <div className="text-right hidden md:block">
             <span className="text-slate-600 text-[10px] font-black uppercase block mb-1">
-              Total Trips Found
+              Upcoming Trips Found
             </span>
             <span className="text-3xl font-black text-white">
               {trips.length}
@@ -213,10 +227,10 @@ export default function BusTripsPage() {
             <div className="text-center py-20 bg-[#111827] rounded-[3rem] border-2 border-dashed border-white/5">
               <Clock size={48} className="mx-auto text-slate-800 mb-4" />
               <h3 className="text-xl font-bold text-slate-500 uppercase tracking-widest">
-                No active trips scheduled
+                No upcoming trips scheduled
               </h3>
               <p className="text-slate-600 mt-2">
-                Please check back later for new dates.
+                All scheduled trips for this bus have passed. Please check back later.
               </p>
             </div>
           )}
